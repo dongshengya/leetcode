@@ -1277,39 +1277,6 @@ int t23(vector<int>& nums) {
 	return ans;
 }
 
-vector<int> t24_h(vector<vector<int>>&nums, int d) {
-	//在矩阵中找到小于等于d的个数，以及小于等于d且距离d最近的数字
-	int count = 0;
-	int near = INT_MIN;
-	int i = 0;
-	for (int j = nums[0].size() - 1; j >= 0;) {
-		if (nums[i][j] > d) {
-			j--;
-		}
-		else {
-			near = max(near, nums[i][j]);
-			count = count + j + 1;
-			i++;
-		}
-		if (i >= nums.size())return { count ,near };
-	}
-	return { count ,near };
-}
-//在行有序从左到右增大，列有序从上到下增大的矩阵中找到第k小的数字
-//不理解 为什么最后返回的MIN一定在矩阵中
-int t24(vector<vector<int>>&nums, int k) {
-	//二分
-	int MIN = nums[0][0], MAX = nums[nums.size() - 1][nums[0].size() - 1];
-	vector<int> res = { 0,0 };
-	while (MIN < MAX) {
-		int mid = MIN + (MAX - MIN) / 2;
-		res = t24_h(nums, mid);
-		//矩阵中小于等于mid的个数 res[0] 
-		if (res[0] < k) MIN = mid + 1;
-		else MAX = mid;
-	}
-	return MIN;
-}
 
 //字符串s1中有多少子序列等于字符串s2
 int t25(string s1, string s2) {
@@ -2051,10 +2018,48 @@ int t52(vector<vector<int>>& nums) {
 删除操作时，首先判断val 是否在哈希表中，如果不存在则返回false，如果存在则删除val，操作如下：
 从哈希表中获val 的下标index；
 将变长数组的最后一个元素last 移动到下标index 处，在哈希表中将last 的下标更新为index；
-在变长数组中删除最后一个元素，在哈希表中删除 val；
+在变长数组中删除最后一个元素，在哈希表中删除 val；（数组最后一个元素可以不删除，对应的插入时要稍作调整，如下代码）
 返回true。
 */
+class RandomizedSet {
+public:
+	vector<int> num;
+	unordered_map<int, int> m;
+	int size;//下一个插入元素在变长数组中的下标，同时代表数组的有效长度
+	RandomizedSet() {
+		size = 0;
+	}
 
+	bool insert(int val) {
+		if (m.count(val))return false;
+		m[val] = size;
+		if (num.size() <= size)num.push_back(val);
+		else num[size] = (val);
+		size++;
+		return true;
+	}
+
+	bool remove(int val) {
+		if (m.count(val)) {
+			size--;
+			/*关键点
+			从哈希表中获val 的下标index；
+			将变长数组的最后一个元素last 移动到下标index 处，在哈希表中将last 的下标更新为index；
+			*/
+			int index = m[val];
+			num[index] = num[size];
+			m[num[index]] = index;
+
+			m.erase(val);
+			return true;
+		}
+		else return false;
+	}
+
+	int getRandom() {
+		return num[rand() % (size)];
+	}
+};
 //字典序   方法数  长度k
 //给定一个字符串 和 长度 返回这个字符串是总序列中的第几个（按字典序排）
 //所有字符都是小写字母 比如长度为4的前几个字符串为：
@@ -6054,6 +6059,111 @@ int getSum(int a, int b) {
 		b = carr;
 	}
 	return a;
+}
+
+//矩阵中第k小的元素
+class Solution378 {
+public:
+	bool check(vector<vector<int>>& matrix, int k, int mid) {
+		//matrix中小于等于mid的数是否小于k
+		int count = 0;
+		int r = matrix.size(), c = matrix[0].size();
+		for (int i = 0, j = c - 1; i < r&&j >= 0;) {
+			if (matrix[i][j] > mid) {
+				j--;
+			}
+			else {
+				i++;
+				count = count + (j + 1);
+			}
+		}
+		return count < k;
+	}
+	int kthSmallest(vector<vector<int>>& matrix, int k) {
+		int l = matrix[0][0];
+		int r = matrix[matrix.size() - 1].back();
+		while (l < r) {
+			int mid = l + (r - l) / 2;
+			//matrix中小于等于mid的数 如果小于k mid要舍弃掉也即是mid++
+			if (check(matrix, k, mid))l = mid + 1;
+			//否则 mid有可能是答案 不能舍弃 也就是 r=mid
+			else r = mid;
+		}
+		return l;
+	}
+};
+
+//打乱数组  洗牌算法
+/*
+设待原地乱序的数组 nums。
+循环 n 次，在第 i 次循环中（0≤i<n）：
+在 [i,n)中随机抽取一个下标 j；
+将第 i 个元素与第 j 个元素交换。
+
+*/
+class Solution384 {
+private:
+	vector<int> nums;
+	vector<int> original;
+public:
+	Solution384(vector<int>& nums) {
+		this->nums = nums;
+		this->original.resize(nums.size());
+		//copy只负责复制，不负责申请空间，所以复制前必须有足够的空间
+		copy(nums.begin(), nums.end(), original.begin());
+	}
+
+	vector<int> reset() {
+		return original;
+	}
+
+	vector<int> shuffle() {
+		for (int i = 0; i < nums.size(); ++i) {
+			int j = i + rand() % (nums.size() - i);
+			swap(nums[i], nums[j]);
+		}
+		return nums;
+	}
+};
+
+
+//395 至少有k个重复字符的最长字串
+/*
+对于字符串 s，如果存在某个字符 ch，它的出现次数大于 0 且小于 k，则任何包含 ch 的子串都不可能满足要求。
+也就是说，我们将字符串按照 ch 切分成若干段，则满足要求的最长子串一定出现在某个被切分的段内，而不能跨越一个或多个段。
+*/
+int longestSubstring(string s, int k) {
+	int n = s.size();
+	if (k < 2) return n;
+	if (n < k) return 0;
+	int m[26] = { 0 };
+	for (auto c : s) ++m[c - 'a'];
+	int i = 0;
+	//找到第一个出现次数不到k的字符
+	while (i < n && m[s[i] - 'a'] >= k) ++i;
+	if (i == n) return n;
+	//递归求左边的满足要求的长度
+	int left = longestSubstring(s.substr(0, i), k);
+	//出现次数小于k的肯定不在满足要求的子串中，跳过
+	while (i < n && m[s[i] - 'a'] < k) ++i;
+	//递归求右边的满足要求的长度
+	int right = longestSubstring(s.substr(i), k);
+	return max(left, right);
+}
+
+//4数之和 454  分组 + 哈希
+int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4) {
+	unordered_map<int, int>m;
+	for (int i : nums1) {
+		for (int j : nums2)m[i + j]++;
+	}
+	int ans = 0;
+	for (int i : nums3) {
+		for (int j : nums4) {
+			if (m.count(-i - j))ans = ans + m[-i - j];
+		}
+	}
+	return ans;
 }
 int main()
 {
