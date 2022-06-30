@@ -6165,14 +6165,25 @@ int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vec
 	}
 	return ans;
 }
+
+void sss(char* a, char* b) {
+	char tm = *a;
+	*a = *b;
+	*b = tm;
+}
 int main()
 {
     std::cout << "Hello World!\n";
 
 	string s = "catsandog";
 	vector<string> wordDict = { "cats", "dog", "sand", "and", "cat" };
-	vector<int> nums = { 20,100,10,12,5,13};
-	increasingTriplet(nums);
+	char aa = 'a';
+	char bb = 'b';
+	char * a = &aa;
+	char * b = &bb;
+	std::cout << *a << *b << endl;
+	swap(a, b);
+	std::cout << *a << *b << endl;
 	std::cout << "Hello World!\n";
 	std::cout << "Hello World!\n";
 
